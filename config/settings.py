@@ -113,9 +113,11 @@ class MonitoringConfig:
 
 # News queries for adaptive crawling
 INDIA_NEWS_QUERIES = [
+    "India news",
     "latest India news today",
     "India breaking news",
     "Indian politics news",
+    "India government news",
     "India economy business news",
     "India state government news",
     "India international relations news",
@@ -123,6 +125,66 @@ INDIA_NEWS_QUERIES = [
     "India sports cricket news",
     "India weather climate news",
     "India infrastructure development news",
+    "Modi government news",
+    "India parliament news",
+    "India budget news",
+    "Indian stock market news",
+]
+
+# Direct News Website RSS Feeds (more reliable than Google News)
+# These provide direct article URLs without redirect issues
+NEWS_RSS_FEEDS = [
+    # --- National News (English) ---
+    # Times of India
+    "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+    "https://timesofindia.indiatimes.com/rssfeeds/1221656.cms",  # India news
+    "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms",  # Politics
+    # Hindustan Times
+    "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml",
+    "https://www.hindustantimes.com/feeds/rss/business/rssfeed.xml",
+    "https://www.hindustantimes.com/feeds/rss/sports/rssfeed.xml",
+    # NDTV
+    "https://feeds.feedburner.com/ndtvnews-india-news",
+    "https://feeds.feedburner.com/ndtvnews-top-stories",
+    "https://feeds.feedburner.com/ndtvprofit-latest",
+    # Indian Express
+    "https://indianexpress.com/section/india/feed/",
+    "https://indianexpress.com/section/business/feed/",
+    "https://indianexpress.com/section/political-pulse/feed/",
+    # The Hindu
+    "https://www.thehindu.com/news/national/feeder/default.rss",
+    "https://www.thehindu.com/business/feeder/default.rss",
+    # LiveMint
+    "https://www.livemint.com/rss/news",
+    "https://www.livemint.com/rss/economy",
+    "https://www.livemint.com/rss/companies",
+    # Economic Times
+    "https://economictimes.indiatimes.com/rssfeedstopstories.cms",
+    "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+    # --- Tech News ---
+    "https://techcrunch.com/tag/india/feed/",
+    "https://yourstory.com/feed",
+    "https://inc42.com/feed/",
+    "https://entrackr.com/feed/",
+    # --- Business Standard ---
+    "https://www.business-standard.com/rss/home_page_top_stories.rss",
+    "https://www.business-standard.com/rss/latest.rss",
+    # --- News18 ---
+    "https://www.news18.com/commonfeeds/v1/eng/rss/india.xml",
+    "https://www.news18.com/commonfeeds/v1/eng/rss/business.xml",
+    # --- India Today ---
+    "https://www.indiatoday.in/rss/home",
+    "https://www.indiatoday.in/rss/1206578",  # India
+    # --- FirstPost ---
+    "https://www.firstpost.com/rss/india.xml",
+    "https://www.firstpost.com/rss/business.xml",
+]
+
+# Google News RSS feeds (backup - for metadata only, actual URLs need resolution)
+GOOGLE_NEWS_RSS_FEEDS = [
+    "https://news.google.com/rss/search?q=india+news&hl=en-IN&gl=IN&ceid=IN:en",
+    "https://news.google.com/rss/search?q=india+politics&hl=en-IN&gl=IN&ceid=IN:en",
+    "https://news.google.com/rss/search?q=india+economy&hl=en-IN&gl=IN&ceid=IN:en",
 ]
 
 # State-specific queries

@@ -1,0 +1,12 @@
+# Install dependencies
+pip install -r requirements.txt
+
+# Run seed-and-crawl (default)
+python main.py --mode seed --max-urls 100
+
+# Run adaptive crawl
+python main.py --mode adaptive
+
+# Development mode (fewer URLs, visible browser)
+python main.py --mode seed --dev
+python main.py --mode google-news --max-urls 20

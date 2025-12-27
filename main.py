@@ -130,31 +130,34 @@ class IndiaNewsCrawler:
         categories: Optional[List[str]] = None,
         queries: Optional[List[str]] = None,
         max_urls: int = 500,
+        include_google_news: bool = True,
     ) -> List[DiscoveredURL]:
         """
-        Phase 1: Discover URLs using URL seeding
+        Phase 1: Discover URLs using Google News, URL seeding, and sitemaps
         
         Args:
             categories: Source categories to use
             queries: News queries for relevance
             max_urls: Maximum URLs to discover
+            include_google_news: Whether to include Google News RSS feeds
             
         Returns:
             List of discovered URLs sorted by relevance
         """
-        logger.info(f"Starting URL discovery (max: {max_urls})")
+        logger.info(f"Starting URL discovery (max: {max_urls}, google_news: {include_google_news})")
         
         categories = categories or ["national_news", "tech_news"]
-        queries = queries or INDIA_NEWS_QUERIES[:3]
+        queries = queries or INDIA_NEWS_QUERIES[:5]
         
         all_urls = []
         
         async with URLSeeder(self.config.seeding) as seeder:
-            # Discover India news
+            # Discover India news (now includes Google News by default)
             urls = await seeder.discover_india_news(
                 queries=queries,
                 categories=categories,
                 max_urls_per_source=max_urls // len(categories),
+                include_google_news=include_google_news,
             )
             all_urls.extend(urls)
             
@@ -168,6 +171,72 @@ class IndiaNewsCrawler:
                 
         logger.info(f"Discovered {len(all_urls)} URLs, {len(filtered)} new")
         return filtered[:max_urls]
+    
+    async def discover_from_rss(
+        self,
+        rss_feeds: Optional[List[str]] = None,
+        max_urls: int = 100,
+    ) -> List[DiscoveredURL]:
+        """
+        Discover news URLs from direct news website RSS feeds.
+        This is the most reliable method - URLs are direct article links.
+        
+        Args:
+            rss_feeds: List of RSS feed URLs (defaults to NEWS_RSS_FEEDS)
+            max_urls: Maximum URLs to return
+            
+        Returns:
+            List of discovered URLs
+        """
+        logger.info(f"Discovering from direct RSS feeds (max: {max_urls})")
+        
+        async with URLSeeder(self.config.seeding) as seeder:
+            urls = await seeder.discover_from_direct_rss(
+                rss_feeds=rss_feeds,
+                max_urls=max_urls,
+            )
+        
+        # Filter out already crawled URLs
+        filtered = [u for u in urls if not self.storage.url_exists(u.url)]
+        logger.info(f"Found {len(urls)} URLs from RSS, {len(filtered)} new")
+        return filtered
+    
+    async def discover_google_news(
+        self,
+        queries: Optional[List[str]] = None,
+        max_urls: int = 100,
+    ) -> List[DiscoveredURL]:
+        """
+        Discover news URLs from Google News RSS feeds only
+        
+        Args:
+            queries: Search queries (defaults to India news queries)
+            max_urls: Maximum URLs to return
+            
+        Returns:
+            List of discovered URLs from Google News
+        """
+        logger.info(f"Discovering from Google News RSS (max: {max_urls})")
+        
+        queries = queries or [
+            "India news",
+            "India breaking news", 
+            "India politics",
+            "India economy",
+            "Indian government",
+        ]
+        
+        async with URLSeeder(self.config.seeding) as seeder:
+            urls = await seeder.discover_from_google_news(
+                queries=queries,
+                max_urls=max_urls,
+                resolve_redirects=True,
+            )
+        
+        # Filter out already crawled URLs
+        filtered = [u for u in urls if not self.storage.url_exists(u.url)]
+        logger.info(f"Found {len(urls)} URLs from Google News, {len(filtered)} new")
+        return filtered
         
     async def crawl_discovered_urls(
         self,
@@ -193,6 +262,10 @@ class IndiaNewsCrawler:
         results = []
         url_strings = [u.url for u in urls]
         
+        # Ensure we have a session
+        if not self._current_session:
+            self._create_session(CrawlMode.SEED_AND_CRAWL)
+        
         from crawler.core_engine import CoreCrawlerEngine
         engine = CoreCrawlerEngine(
             config=self.config.crawler,
@@ -211,15 +284,19 @@ class IndiaNewsCrawler:
                 if result.success:
                     stored = self.storage.store(result)
                     if stored:
-                        self._current_session.successful += 1
+                        if self._current_session:
+                            self._current_session.successful += 1
                         logger.info(f"✓ Crawled: {result.title[:50]}... (score: {result.score:.2f})")
                     else:
-                        self._current_session.duplicates += 1
+                        if self._current_session:
+                            self._current_session.duplicates += 1
                 else:
-                    self._current_session.failed += 1
+                    if self._current_session:
+                        self._current_session.failed += 1
                     logger.warning(f"✗ Failed: {result.url} - {result.error}")
-                    
-                self._current_session.total_urls += 1
+                
+                if self._current_session:
+                    self._current_session.total_urls += 1
                 
         return results
         
@@ -377,13 +454,15 @@ class IndiaNewsCrawler:
         self,
         max_urls: int = 200,
         categories: Optional[List[str]] = None,
+        include_google_news: bool = True,
     ) -> List[CrawlResult]:
         """
-        Complete seed-and-crawl pipeline
+        Complete seed-and-crawl pipeline with Google News support
         
         Args:
             max_urls: Maximum URLs to process
             categories: Source categories
+            include_google_news: Whether to include Google News RSS feeds
             
         Returns:
             List of crawl results
@@ -391,10 +470,11 @@ class IndiaNewsCrawler:
         session = self._create_session(CrawlMode.SEED_AND_CRAWL)
         
         try:
-            # Phase 1: Discover
+            # Phase 1: Discover (now includes Google News)
             discovered = await self.discover_urls(
                 categories=categories,
                 max_urls=max_urls,
+                include_google_news=include_google_news,
             )
             
             # Phase 2: Crawl
@@ -554,15 +634,20 @@ async def main():
     parser = argparse.ArgumentParser(description="India News Crawler")
     parser.add_argument(
         "--mode",
-        choices=["seed", "deep", "adaptive", "continuous"],
-        default="seed",
-        help="Crawling mode"
+        choices=["seed", "rss", "google-news", "deep", "adaptive", "continuous"],
+        default="rss",
+        help="Crawling mode: rss (recommended - direct RSS feeds), seed (sitemaps), google-news, deep, adaptive, continuous"
     )
     parser.add_argument(
         "--max-urls",
         type=int,
         default=100,
         help="Maximum URLs to crawl"
+    )
+    parser.add_argument(
+        "--no-google-news",
+        action="store_true",
+        help="Disable Google News in seed mode"
     )
     parser.add_argument(
         "--dev",
@@ -583,20 +668,47 @@ async def main():
     # Create crawler
     crawler = IndiaNewsCrawler(config)
     
+    include_google = not args.no_google_news
+    google_status = "enabled" if include_google else "disabled"
+    
     print(f"""
 ╔═══════════════════════════════════════════════════════════╗
 ║          🇮🇳 INDIA NEWS CRAWLER - Production Ready 🇮🇳      ║
 ╠═══════════════════════════════════════════════════════════╣
 ║  Mode: {args.mode:<50} ║
 ║  Max URLs: {args.max_urls:<46} ║
+║  Google News: {google_status:<43} ║
 ║  Config: {'Development' if args.dev else 'Production':<47} ║
 ╚═══════════════════════════════════════════════════════════╝
     """)
     
     # Run appropriate mode
     if args.mode == "seed":
-        results = await crawler.run_seed_and_crawl(max_urls=args.max_urls)
+        results = await crawler.run_seed_and_crawl(
+            max_urls=args.max_urls,
+            include_google_news=include_google
+        )
         print(f"\n✓ Completed: {len(results)} articles crawled")
+    
+    elif args.mode == "rss":
+        # Direct RSS feeds mode (most reliable)
+        urls = await crawler.discover_from_rss(max_urls=args.max_urls)
+        if urls:
+            results = await crawler.crawl_discovered_urls(urls)
+            print(f"\n✓ Completed: {len(results)} articles crawled from RSS feeds")
+        else:
+            print("\n⚠ No new URLs found from RSS feeds")
+            results = []
+    
+    elif args.mode == "google-news":
+        # Google News only mode (may have redirect issues)
+        urls = await crawler.discover_google_news(max_urls=args.max_urls)
+        if urls:
+            results = await crawler.crawl_discovered_urls(urls)
+            print(f"\n✓ Completed: {len(results)} articles crawled from Google News")
+        else:
+            print("\n⚠ No new URLs found from Google News")
+            results = []
         
     elif args.mode == "deep":
         results = await crawler.run_deep_crawl(max_pages=args.max_urls)
