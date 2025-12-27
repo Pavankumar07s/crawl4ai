@@ -1,0 +1,38 @@
+"""Config module initialization"""
+from .settings import (
+    IndiaNewsCrawlerConfig,
+    CrawlerConfig,
+    AdaptiveConfig,
+    URLSeedingConfig,
+    ProxyConfig,
+    StorageConfig,
+    MonitoringConfig,
+    CrawlStrategy,
+    Language,
+    get_default_config,
+    get_development_config,
+    INDIA_NEWS_QUERIES,
+    INDIA_STATE_QUERIES,
+    SEED_URLS,
+    URL_PATTERNS,
+    RELEVANCE_KEYWORDS,
+)
+
+__all__ = [
+    "IndiaNewsCrawlerConfig",
+    "CrawlerConfig", 
+    "AdaptiveConfig",
+    "URLSeedingConfig",
+    "ProxyConfig",
+    "StorageConfig",
+    "MonitoringConfig",
+    "CrawlStrategy",
+    "Language",
+    "get_default_config",
+    "get_development_config",
+    "INDIA_NEWS_QUERIES",
+    "INDIA_STATE_QUERIES",
+    "SEED_URLS",
+    "URL_PATTERNS",
+    "RELEVANCE_KEYWORDS",
+]
