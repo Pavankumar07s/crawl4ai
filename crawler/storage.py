@@ -5,8 +5,9 @@ import json
 import sqlite3
 import hashlib
 import logging
+import re
 from pathlib import Path
-from typing import List, Dict, Optional, Any, Iterator
+from typing import List, Dict, Optional, Any, Iterator, Tuple
 from dataclasses import asdict
 from datetime import datetime
 from contextlib import contextmanager
@@ -15,6 +16,7 @@ import sys
 sys.path.append('..')
 from config.settings import StorageConfig
 from .core_engine import CrawlResult
+from utils.content_cleaner import ContentCleaner, ContentDeduplicatorV2
 
 logger = logging.getLogger(__name__)
 
@@ -111,12 +113,22 @@ class JSONLinesStorage:
 
 class MarkdownExporter:
     """
-    Export results to Markdown format for RAG pipelines
+    Export results to Markdown format for RAG pipelines.
+    
+    Features:
+    - Content cleaning (removes navigation, menus, HTML noise)
+    - URL quality filtering (filters out homepages, tag pages)
+    - Smart content extraction (extracts actual article text)
+    - Improved relevance scoring
+    - Deduplication
     """
     
-    def __init__(self, output_dir: str):
+    def __init__(self, output_dir: str, max_article_words: int = 500):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.max_article_words = max_article_words
+        self.content_cleaner = ContentCleaner()
+        self.deduplicator = ContentDeduplicatorV2()
         
     def _sanitize_filename(self, title: str) -> str:
         """Create safe filename from title"""
@@ -124,80 +136,207 @@ class MarkdownExporter:
         safe = "".join(c if c.isalnum() or c in ' -_' else '_' for c in title)
         safe = safe[:100].strip()
         return safe or "untitled"
+    
+    def _is_quality_article(self, result: CrawlResult) -> Tuple[bool, float, str]:
+        """
+        Check if result is a quality article worth exporting.
         
-    def export(self, result: CrawlResult, include_metadata: bool = True) -> str:
+        Returns:
+            Tuple of (is_quality, adjusted_score, reason)
+        """
+        # Check URL quality
+        if not self.content_cleaner.is_article_url(result.url):
+            return False, 0.0, "Non-article URL (homepage/tag/category page)"
+        
+        # Check title quality  
+        if not self.content_cleaner.is_article_title(result.title):
+            return False, 0.0, "Non-article title (listing/category page)"
+        
+        # Check for duplicates
+        content = result.markdown or result.content
+        if self.deduplicator.is_duplicate(result.url, result.title, content):
+            return False, 0.0, "Duplicate content"
+        
+        # Calculate quality score
+        is_quality, score = self.content_cleaner.is_quality_content(
+            content, result.title, result.url, min_score=0.3
+        )
+        
+        if not is_quality:
+            return False, score, f"Low quality score ({score:.2f})"
+        
+        return True, score, "Quality article"
+        
+    def export(self, result: CrawlResult, include_metadata: bool = True) -> Optional[str]:
         """Export single result to markdown file"""
+        # Quality check
+        is_quality, score, reason = self._is_quality_article(result)
+        if not is_quality:
+            logger.debug(f"Skipping {result.url}: {reason}")
+            return None
+        
+        # Mark as seen
+        content = result.markdown or result.content
+        self.deduplicator.add(result.url, result.title, content)
+        
         filename = f"{self._sanitize_filename(result.title)}_{result.crawled_at.strftime('%Y%m%d_%H%M%S')}.md"
         filepath = self.output_dir / filename
         
-        content = []
+        # Clean and extract content
+        cleaned_content = self.content_cleaner.extract_article_content(
+            content, max_words=self.max_article_words
+        )
+        
+        output = []
         
         # Front matter
         if include_metadata:
-            content.append("---")
-            content.append(f"title: {result.title}")
-            content.append(f"url: {result.url}")
-            content.append(f"source: {result.source_domain}")
-            content.append(f"crawled_at: {result.crawled_at.isoformat()}")
-            content.append(f"relevance_score: {result.score:.2f}")
+            output.append("---")
+            output.append(f"title: {result.title}")
+            output.append(f"url: {result.url}")
+            output.append(f"source: {result.source_domain}")
+            output.append(f"crawled_at: {result.crawled_at.isoformat()}")
+            output.append(f"relevance_score: {score:.2f}")
             if result.language:
-                content.append(f"language: {result.language}")
-            content.append("---\n")
+                output.append(f"language: {result.language}")
+            output.append("---\n")
             
         # Title
-        content.append(f"# {result.title}\n")
+        output.append(f"# {result.title}\n")
         
         # Source info
-        content.append(f"**Source:** [{result.source_domain}]({result.url})")
-        content.append(f"**Crawled:** {result.crawled_at.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        output.append(f"**Source:** [{result.source_domain}]({result.url})")
+        output.append(f"**Crawled:** {result.crawled_at.strftime('%Y-%m-%d %H:%M:%S')}")
+        output.append(f"**Quality Score:** {score:.2f}\n")
         
         # Main content
-        content.append(result.markdown or result.content)
+        output.append(cleaned_content if cleaned_content else "*[No article content extracted]*")
         
         # Write file
         with open(filepath, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(content))
+            f.write('\n'.join(output))
             
         logger.debug(f"Exported: {filepath}")
         return str(filepath)
         
     def export_many(self, results: List[CrawlResult]) -> List[str]:
         """Export multiple results"""
-        return [self.export(r) for r in results if r.success]
+        exported = []
+        for r in results:
+            if r.success:
+                path = self.export(r)
+                if path:
+                    exported.append(path)
+        return exported
         
     def export_combined(
         self,
         results: List[CrawlResult],
         output_name: str = "combined_news.md",
+        min_quality_score: float = 0.3,
+        max_articles: int = 100,
     ) -> str:
-        """Export all results to single combined file"""
+        """
+        Export all results to single combined file with quality filtering.
+        
+        Args:
+            results: List of crawl results
+            output_name: Output filename
+            min_quality_score: Minimum quality score to include
+            max_articles: Maximum number of articles to include
+        """
         filepath = self.output_dir / output_name
         
-        content = []
-        content.append("# India News Compilation\n")
-        content.append(f"Generated: {datetime.now().isoformat()}")
-        content.append(f"Total Articles: {len(results)}\n")
-        content.append("---\n")
+        # Reset deduplicator for this export
+        self.deduplicator.clear()
         
-        for i, result in enumerate(results, 1):
+        # Filter and score articles
+        quality_articles = []
+        skipped_stats = {"non_article_url": 0, "non_article_title": 0, "duplicate": 0, "low_quality": 0, "no_content": 0}
+        
+        for result in results:
             if not result.success:
                 continue
-                
-            content.append(f"## {i}. {result.title}\n")
-            content.append(f"**Source:** [{result.source_domain}]({result.url})")
-            content.append(f"**Score:** {result.score:.2f}\n")
             
-            # Truncate content for combined file
-            article_content = result.markdown or result.content
-            if len(article_content) > 2000:
-                article_content = article_content[:2000] + "\n\n*[Content truncated...]*"
-            content.append(article_content)
-            content.append("\n---\n")
+            # Check URL quality
+            if not self.content_cleaner.is_article_url(result.url):
+                skipped_stats["non_article_url"] += 1
+                continue
             
+            # Check title quality
+            if not self.content_cleaner.is_article_title(result.title):
+                skipped_stats["non_article_title"] += 1
+                continue
+            
+            content = result.markdown or result.content
+            
+            # Check for duplicates
+            if self.deduplicator.is_duplicate(result.url, result.title, content):
+                skipped_stats["duplicate"] += 1
+                continue
+            
+            # Calculate quality score
+            is_quality, score = self.content_cleaner.is_quality_content(
+                content, result.title, result.url, min_score=min_quality_score
+            )
+            
+            if not is_quality:
+                skipped_stats["low_quality"] += 1
+                continue
+            
+            # Extract and clean content
+            cleaned_content = self.content_cleaner.extract_article_content(
+                content, max_words=self.max_article_words
+            )
+            
+            if not cleaned_content or len(cleaned_content.strip()) < 100:
+                skipped_stats["no_content"] += 1
+                continue
+            
+            # Mark as seen
+            self.deduplicator.add(result.url, result.title, content)
+            
+            quality_articles.append({
+                "result": result,
+                "score": score,
+                "content": cleaned_content
+            })
+        
+        # Sort by score (highest first) and limit
+        quality_articles.sort(key=lambda x: x["score"], reverse=True)
+        quality_articles = quality_articles[:max_articles]
+        
+        # Build output
+        output = []
+        output.append("# India News Compilation\n")
+        output.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        output.append(f"**Quality Articles:** {len(quality_articles)}")
+        output.append(f"**Total Processed:** {len(results)}")
+        output.append(f"**Filtering Summary:**")
+        output.append(f"  - Non-article URLs (homepages/tags): {skipped_stats['non_article_url']}")
+        output.append(f"  - Non-article titles: {skipped_stats['non_article_title']}")
+        output.append(f"  - Duplicates removed: {skipped_stats['duplicate']}")
+        output.append(f"  - Low quality score: {skipped_stats['low_quality']}")
+        output.append(f"  - No content extracted: {skipped_stats['no_content']}")
+        output.append("\n---\n")
+        
+        for i, article in enumerate(quality_articles, 1):
+            result = article["result"]
+            score = article["score"]
+            cleaned_content = article["content"]
+            
+            output.append(f"## {i}. {result.title}\n")
+            output.append(f"**Source:** [{result.source_domain}]({result.url})")
+            output.append(f"**Quality Score:** {score:.2f}")
+            output.append(f"**Crawled:** {result.crawled_at.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            output.append(cleaned_content)
+            output.append("\n---\n")
+        
+        # Write file
         with open(filepath, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(content))
-            
-        logger.info(f"Combined export: {filepath}")
+            f.write('\n'.join(output))
+        
+        logger.info(f"Combined export: {filepath} ({len(quality_articles)} quality articles)")
         return str(filepath)
 
 
@@ -421,7 +560,12 @@ class SQLiteStorage:
 
 class StorageManager:
     """
-    Unified storage manager combining all storage backends
+    Unified storage manager combining all storage backends.
+    
+    Features:
+    - Content deduplication
+    - Quality-based filtering
+    - Multiple export formats (JSONL, Markdown, RAG)
     """
     
     def __init__(self, config: Optional[StorageConfig] = None):
@@ -432,11 +576,13 @@ class StorageManager:
         self.db = SQLiteStorage(self.config.database_path)
         self.jsonl_path = Path(self.config.output_dir) / "crawl_output.jsonl"
         self.markdown_exporter = MarkdownExporter(
-            str(Path(self.config.output_dir) / "markdown")
+            str(Path(self.config.output_dir) / "markdown"),
+            max_article_words=500
         )
+        self.content_cleaner = ContentCleaner()
         
         self._session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self._stats = {"stored": 0, "duplicates": 0, "errors": 0}
+        self._stats = {"stored": 0, "duplicates": 0, "errors": 0, "filtered": 0}
         
     def store(self, result: CrawlResult, export_markdown: bool = False) -> bool:
         """
@@ -494,8 +640,9 @@ class StorageManager:
         self,
         results: List[CrawlResult],
         export_combined_markdown: bool = True,
+        min_quality_score: float = 0.3,
     ) -> int:
-        """Store batch of results"""
+        """Store batch of results with quality filtering"""
         stored = 0
         
         for result in results:
@@ -507,7 +654,8 @@ class StorageManager:
             if successful:
                 self.markdown_exporter.export_combined(
                     successful,
-                    f"news_batch_{self._session_id}.md"
+                    f"news_batch_{self._session_id}.md",
+                    min_quality_score=min_quality_score,
                 )
                 
         return stored
@@ -532,25 +680,124 @@ class StorageManager:
         """Get recent high-quality articles"""
         return self.db.get_recent(limit=limit, min_score=min_score)
         
-    def export_for_rag(self, output_path: str, min_score: float = 0.5):
-        """Export data in format suitable for RAG pipelines"""
+    def export_for_rag(
+        self,
+        output_path: str,
+        min_score: float = 0.3,
+        clean_content: bool = True,
+    ):
+        """
+        Export data in format suitable for RAG pipelines.
+        
+        Args:
+            output_path: Path to output JSON file
+            min_score: Minimum quality score
+            clean_content: Whether to clean content before export
+        """
         articles = self.db.get_recent(limit=10000, min_score=min_score)
         
         rag_data = []
+        dedup = ContentDeduplicatorV2()
+        
         for article in articles:
+            url = article["url"]
+            title = article["title"]
+            content = article["content"] or article["markdown"] or ""
+            
+            # Skip non-article URLs
+            if not self.content_cleaner.is_article_url(url):
+                continue
+            
+            # Skip non-article titles
+            if not self.content_cleaner.is_article_title(title):
+                continue
+            
+            # Skip duplicates
+            if dedup.is_duplicate(url, title, content):
+                continue
+            dedup.add(url, title, content)
+            
+            # Clean content if requested
+            if clean_content:
+                cleaned_content = self.content_cleaner.extract_article_content(
+                    content, max_words=500
+                )
+                if not cleaned_content or len(cleaned_content.strip()) < 100:
+                    continue
+            else:
+                cleaned_content = content
+            
+            # Calculate quality score
+            _, quality_score = self.content_cleaner.is_quality_content(
+                content, title, url
+            )
+            
             rag_data.append({
-                "id": article["url_hash"] if "url_hash" in article else hashlib.sha256(article["url"].encode()).hexdigest()[:16],
-                "text": article["content"],
+                "id": article["url_hash"] if "url_hash" in article else hashlib.sha256(url.encode()).hexdigest()[:16],
+                "text": cleaned_content,
                 "metadata": {
-                    "title": article["title"],
-                    "url": article["url"],
+                    "title": title,
+                    "url": url,
                     "source": article["source_domain"],
                     "date": article["crawled_at"],
-                    "score": article["score"],
+                    "original_score": article["score"],
+                    "quality_score": quality_score,
                 }
             })
+        
+        # Sort by quality score
+        rag_data.sort(key=lambda x: x["metadata"]["quality_score"], reverse=True)
             
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(rag_data, f, indent=2, ensure_ascii=False)
             
-        logger.info(f"Exported {len(rag_data)} articles for RAG to {output_path}")
+        logger.info(f"Exported {len(rag_data)} quality articles for RAG to {output_path}")
+    
+    def export_markdown_report(
+        self,
+        output_name: str = None,
+        min_quality_score: float = 0.3,
+        max_articles: int = 100,
+    ) -> str:
+        """
+        Generate a quality markdown report from stored articles.
+        
+        Args:
+            output_name: Output filename (auto-generated if None)
+            min_quality_score: Minimum quality score to include
+            max_articles: Maximum number of articles
+            
+        Returns:
+            Path to generated file
+        """
+        if output_name is None:
+            output_name = f"exported_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        
+        # Get all articles from database
+        articles = self.db.get_recent(limit=10000)
+        
+        # Convert to CrawlResult objects for the exporter
+        results = []
+        for article in articles:
+            result = CrawlResult(
+                url=article["url"],
+                title=article["title"],
+                content=article["content"] or "",
+                markdown=article["markdown"] or "",
+                metadata=json.loads(article["metadata"]) if article["metadata"] else {},
+                depth=article["depth"] or 0,
+                score=article["score"] or 0.0,
+                crawled_at=datetime.fromisoformat(article["crawled_at"]) if article["crawled_at"] else datetime.now(),
+                success=True,
+                source_domain=article["source_domain"],
+                language=article["language"],
+            )
+            results.append(result)
+        
+        return self.markdown_exporter.export_combined(
+            results,
+            output_name=output_name,
+            min_quality_score=min_quality_score,
+            max_articles=max_articles,
+        )
+

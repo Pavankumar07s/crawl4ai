@@ -4837,3 +4837,157 @@ ValueError: <Token var=<ContextVar name='deep_crawl_active' default=False at 0x7
 2025-12-28 20:35:41,726 | INFO | __main__ | Session 20251228_202954 completed: 9 successful, 0 failed, 91 duplicates, duration: 0:05:47.394239
 2025-12-28 20:35:41,752 | INFO | crawler.storage | Combined export: output/markdown/exported_20251228_203541.md
 2025-12-28 20:35:41,753 | INFO | __main__ | Exported 100 articles to: output/markdown
+2025-12-29 02:04:09,165 | INFO | __main__ | Started session: 20251229_020409 (mode: seed_and_crawl)
+2025-12-29 02:04:09,165 | INFO | __main__ | Starting URL discovery (max: 100, google_news: True)
+2025-12-29 02:04:09,165 | INFO | crawler.url_seeder | Fetching latest news from Google News RSS feeds...
+2025-12-29 02:04:09,165 | INFO | crawler.url_seeder | Fetching news from 5 Google News RSS feeds
+2025-12-29 02:04:09,841 | INFO | crawler.url_seeder | Parsed 30 articles from Google News RSS
+2025-12-29 02:04:10,181 | INFO | crawler.url_seeder | Parsed 30 articles from Google News RSS
+2025-12-29 02:04:11,180 | INFO | crawler.url_seeder | Parsed 30 articles from Google News RSS
+2025-12-29 02:04:11,248 | INFO | crawler.url_seeder | Parsed 30 articles from Google News RSS
+2025-12-29 02:04:11,321 | INFO | crawler.url_seeder | Parsed 30 articles from Google News RSS
+2025-12-29 02:04:11,321 | INFO | crawler.url_seeder | Total articles from Google News: 150
+2025-12-29 02:04:19,512 | INFO | crawler.url_seeder | Discovered 148 unique URLs from Google News
+2025-12-29 02:04:19,513 | INFO | crawler.url_seeder | Got 100 URLs from Google News
+2025-12-29 02:04:19,514 | INFO | crawler.url_seeder | Discovering URLs for query: India news
+2025-12-29 02:04:19,514 | INFO | crawler.url_seeder | Discovering URLs from 19 domains (sitemap fallback)
+2025-12-29 02:04:22,065 | INFO | crawler.url_seeder | Discovered 0 URLs from www.hindustantimes.com (sitemap fallback)
+2025-12-29 02:04:22,660 | INFO | crawler.url_seeder | Discovered 0 URLs from www.news18.com (sitemap fallback)
+2025-12-29 02:04:22,670 | INFO | crawler.url_seeder | Found 30 page URLs in https://techcrunch.com/sitemap-page-2025.xml (depth 1)
+2025-12-29 02:04:22,671 | INFO | crawler.url_seeder | Found 30 page URLs from techcrunch.com
+2025-12-29 02:04:22,671 | INFO | crawler.url_seeder | Discovered 10 URLs from techcrunch.com (sitemap fallback)
+2025-12-29 02:04:23,635 | INFO | crawler.url_seeder | Discovered 0 URLs from www.indiatoday.in (sitemap fallback)
+2025-12-29 02:04:24,476 | INFO | crawler.url_seeder | Discovered 0 URLs from www.firstpost.com (sitemap fallback)
+2025-12-29 02:04:24,915 | INFO | crawler.url_seeder | Discovered 0 URLs from thewire.in (sitemap fallback)
+2025-12-29 02:04:25,124 | INFO | crawler.url_seeder | Discovered 0 URLs from www.moneycontrol.com (sitemap fallback)
+2025-12-29 02:04:25,473 | INFO | crawler.url_seeder | Discovered 0 URLs from www.republicworld.com (sitemap fallback)
+2025-12-29 02:04:27,345 | INFO | crawler.url_seeder | Discovered 0 URLs from www.ndtv.com (sitemap fallback)
+2025-12-29 02:04:28,320 | INFO | crawler.url_seeder | Discovered 0 URLs from yourstory.com (sitemap fallback)
+2025-12-29 02:04:28,503 | INFO | crawler.url_seeder | Discovered 0 URLs from scroll.in (sitemap fallback)
+2025-12-29 02:04:28,628 | INFO | crawler.url_seeder | Discovered 0 URLs from entrackr.com (sitemap fallback)
+2025-12-29 02:04:28,818 | INFO | crawler.url_seeder | Discovered 0 URLs from www.thehindu.com (sitemap fallback)
+2025-12-29 02:04:31,209 | INFO | crawler.url_seeder | Found 30 page URLs in https://www.livemint.com/sitemap.xml (depth 0)
+2025-12-29 02:04:31,209 | INFO | crawler.url_seeder | Found 30 page URLs from www.livemint.com
+2025-12-29 02:04:31,210 | INFO | crawler.url_seeder | Discovered 10 URLs from www.livemint.com (sitemap fallback)
+2025-12-29 02:04:31,530 | INFO | crawler.url_seeder | Discovered 0 URLs from economictimes.indiatimes.com (sitemap fallback)
+2025-12-29 02:04:31,983 | INFO | crawler.url_seeder | Discovered 0 URLs from timesofindia.indiatimes.com (sitemap fallback)
+2025-12-29 02:04:33,783 | INFO | crawler.url_seeder | Discovered 0 URLs from www.business-standard.com (sitemap fallback)
+2025-12-29 02:04:34,075 | INFO | crawler.url_seeder | Discovered 0 URLs from indianexpress.com (sitemap fallback)
+2025-12-29 02:04:49,231 | INFO | crawler.url_seeder | Discovered 0 URLs from inc42.com (sitemap fallback)
+2025-12-29 02:04:49,231 | INFO | crawler.url_seeder | Discovered 20 URLs across 19 domains
+2025-12-29 02:04:49,231 | INFO | crawler.url_seeder | Discovering URLs for query: latest India news today
+2025-12-29 02:04:49,232 | INFO | crawler.url_seeder | Discovering URLs from 19 domains (sitemap fallback)
+2025-12-29 02:04:51,484 | INFO | crawler.url_seeder | Discovered 0 URLs from www.hindustantimes.com (sitemap fallback)
+2025-12-29 02:04:51,558 | INFO | crawler.url_seeder | Found 30 page URLs in https://techcrunch.com/sitemap-page-2025.xml (depth 1)
+2025-12-29 02:04:51,558 | INFO | crawler.url_seeder | Found 30 page URLs from techcrunch.com
+2025-12-29 02:04:51,558 | INFO | crawler.url_seeder | Discovered 10 URLs from techcrunch.com (sitemap fallback)
+2025-12-29 02:04:52,485 | INFO | crawler.url_seeder | Discovered 0 URLs from www.indiatoday.in (sitemap fallback)
+2025-12-29 02:04:52,980 | INFO | crawler.url_seeder | Discovered 0 URLs from www.firstpost.com (sitemap fallback)
+2025-12-29 02:04:53,021 | INFO | crawler.url_seeder | Discovered 0 URLs from inc42.com (sitemap fallback)
+2025-12-29 02:04:53,177 | INFO | crawler.url_seeder | Discovered 0 URLs from thewire.in (sitemap fallback)
+2025-12-29 02:04:53,932 | INFO | crawler.url_seeder | Discovered 0 URLs from www.moneycontrol.com (sitemap fallback)
+2025-12-29 02:04:53,960 | INFO | crawler.url_seeder | Discovered 0 URLs from www.republicworld.com (sitemap fallback)
+2025-12-29 02:04:56,198 | INFO | crawler.url_seeder | Discovered 0 URLs from entrackr.com (sitemap fallback)
+2025-12-29 02:04:56,278 | INFO | crawler.url_seeder | Discovered 0 URLs from yourstory.com (sitemap fallback)
+2025-12-29 02:04:56,280 | INFO | crawler.url_seeder | Discovered 0 URLs from scroll.in (sitemap fallback)
+2025-12-29 02:04:57,150 | INFO | crawler.url_seeder | Discovered 0 URLs from indianexpress.com (sitemap fallback)
+2025-12-29 02:04:58,245 | INFO | crawler.url_seeder | Found 30 page URLs in https://www.livemint.com/sitemap.xml (depth 0)
+2025-12-29 02:04:58,246 | INFO | crawler.url_seeder | Found 30 page URLs from www.livemint.com
+2025-12-29 02:04:58,247 | INFO | crawler.url_seeder | Discovered 10 URLs from www.livemint.com (sitemap fallback)
+2025-12-29 02:04:59,927 | INFO | crawler.url_seeder | Discovered 0 URLs from www.thehindu.com (sitemap fallback)
+2025-12-29 02:05:01,470 | INFO | crawler.url_seeder | Discovered 0 URLs from www.news18.com (sitemap fallback)
+2025-12-29 02:05:02,233 | INFO | crawler.url_seeder | Discovered 0 URLs from economictimes.indiatimes.com (sitemap fallback)
+2025-12-29 02:05:05,304 | INFO | crawler.url_seeder | Discovered 0 URLs from timesofindia.indiatimes.com (sitemap fallback)
+2025-12-29 02:05:05,949 | INFO | crawler.url_seeder | Discovered 0 URLs from www.ndtv.com (sitemap fallback)
+2025-12-29 02:05:10,634 | INFO | crawler.url_seeder | Discovered 0 URLs from www.business-standard.com (sitemap fallback)
+2025-12-29 02:05:10,634 | INFO | crawler.url_seeder | Discovered 20 URLs across 19 domains
+2025-12-29 02:05:10,634 | INFO | crawler.url_seeder | Discovering URLs for query: India breaking news
+2025-12-29 02:05:10,634 | INFO | crawler.url_seeder | Discovering URLs from 19 domains (sitemap fallback)
+2025-12-29 02:05:10,822 | INFO | crawler.url_seeder | Found 30 page URLs in https://techcrunch.com/sitemap-page-2025.xml (depth 1)
+2025-12-29 02:05:10,822 | INFO | crawler.url_seeder | Found 30 page URLs from techcrunch.com
+2025-12-29 02:05:10,822 | INFO | crawler.url_seeder | Discovered 10 URLs from techcrunch.com (sitemap fallback)
+2025-12-29 02:05:11,076 | INFO | crawler.url_seeder | Discovered 0 URLs from www.firstpost.com (sitemap fallback)
+2025-12-29 02:05:11,789 | INFO | crawler.url_seeder | Discovered 0 URLs from www.news18.com (sitemap fallback)
+2025-12-29 02:05:12,011 | INFO | crawler.url_seeder | Discovered 0 URLs from www.moneycontrol.com (sitemap fallback)
+2025-12-29 02:05:12,708 | INFO | crawler.url_seeder | Discovered 0 URLs from thewire.in (sitemap fallback)
+2025-12-29 02:05:12,862 | INFO | crawler.url_seeder | Discovered 0 URLs from www.republicworld.com (sitemap fallback)
+2025-12-29 02:05:13,108 | INFO | crawler.url_seeder | Discovered 0 URLs from www.hindustantimes.com (sitemap fallback)
+2025-12-29 02:05:13,929 | INFO | crawler.url_seeder | Discovered 0 URLs from inc42.com (sitemap fallback)
+2025-12-29 02:05:14,098 | INFO | crawler.url_seeder | Discovered 0 URLs from www.indiatoday.in (sitemap fallback)
+2025-12-29 02:05:14,970 | INFO | crawler.url_seeder | Discovered 0 URLs from www.thehindu.com (sitemap fallback)
+2025-12-29 02:05:15,010 | INFO | crawler.url_seeder | Discovered 0 URLs from entrackr.com (sitemap fallback)
+2025-12-29 02:05:15,391 | INFO | crawler.url_seeder | Discovered 0 URLs from yourstory.com (sitemap fallback)
+2025-12-29 02:05:15,672 | INFO | crawler.url_seeder | Discovered 0 URLs from scroll.in (sitemap fallback)
+2025-12-29 02:05:16,549 | INFO | crawler.url_seeder | Discovered 0 URLs from indianexpress.com (sitemap fallback)
+2025-12-29 02:05:17,385 | INFO | crawler.url_seeder | Discovered 0 URLs from timesofindia.indiatimes.com (sitemap fallback)
+2025-12-29 02:05:19,818 | INFO | crawler.url_seeder | Found 30 page URLs in https://www.livemint.com/sitemap.xml (depth 0)
+2025-12-29 02:05:19,818 | INFO | crawler.url_seeder | Found 30 page URLs from www.livemint.com
+2025-12-29 02:05:19,819 | INFO | crawler.url_seeder | Discovered 10 URLs from www.livemint.com (sitemap fallback)
+2025-12-29 02:05:20,049 | INFO | crawler.url_seeder | Discovered 0 URLs from economictimes.indiatimes.com (sitemap fallback)
+2025-12-29 02:05:24,049 | INFO | crawler.url_seeder | Discovered 0 URLs from www.ndtv.com (sitemap fallback)
+2025-12-29 02:05:28,650 | INFO | crawler.url_seeder | Discovered 0 URLs from www.business-standard.com (sitemap fallback)
+2025-12-29 02:05:28,650 | INFO | crawler.url_seeder | Discovered 20 URLs across 19 domains
+2025-12-29 02:05:28,651 | INFO | crawler.url_seeder | Discovering URLs for query: Indian politics news
+2025-12-29 02:05:28,651 | INFO | crawler.url_seeder | Discovering URLs from 19 domains (sitemap fallback)
+2025-12-29 02:05:28,876 | INFO | crawler.url_seeder | Found 30 page URLs in https://techcrunch.com/sitemap-page-2025.xml (depth 1)
+2025-12-29 02:05:28,876 | INFO | crawler.url_seeder | Found 30 page URLs from techcrunch.com
+2025-12-29 02:05:28,876 | INFO | crawler.url_seeder | Discovered 10 URLs from techcrunch.com (sitemap fallback)
+2025-12-29 02:05:29,225 | INFO | crawler.url_seeder | Discovered 0 URLs from www.firstpost.com (sitemap fallback)
+2025-12-29 02:05:29,627 | INFO | crawler.url_seeder | Discovered 0 URLs from www.news18.com (sitemap fallback)
+2025-12-29 02:05:29,770 | INFO | crawler.url_seeder | Discovered 0 URLs from thewire.in (sitemap fallback)
+2025-12-29 02:05:30,029 | INFO | crawler.url_seeder | Discovered 0 URLs from www.indiatoday.in (sitemap fallback)
+2025-12-29 02:05:31,740 | INFO | crawler.url_seeder | Discovered 0 URLs from www.hindustantimes.com (sitemap fallback)
+2025-12-29 02:05:32,166 | INFO | crawler.url_seeder | Discovered 0 URLs from entrackr.com (sitemap fallback)
+2025-12-29 02:05:32,532 | INFO | crawler.url_seeder | Discovered 0 URLs from www.moneycontrol.com (sitemap fallback)
+2025-12-29 02:05:32,667 | INFO | crawler.url_seeder | Discovered 0 URLs from inc42.com (sitemap fallback)
+2025-12-29 02:05:33,036 | INFO | crawler.url_seeder | Discovered 0 URLs from www.ndtv.com (sitemap fallback)
+2025-12-29 02:05:33,156 | INFO | crawler.url_seeder | Discovered 0 URLs from www.thehindu.com (sitemap fallback)
+2025-12-29 02:05:33,323 | INFO | crawler.url_seeder | Discovered 0 URLs from scroll.in (sitemap fallback)
+2025-12-29 02:05:33,894 | INFO | crawler.url_seeder | Discovered 0 URLs from www.republicworld.com (sitemap fallback)
+2025-12-29 02:05:33,927 | INFO | crawler.url_seeder | Discovered 0 URLs from indianexpress.com (sitemap fallback)
+2025-12-29 02:05:34,266 | INFO | crawler.url_seeder | Discovered 0 URLs from yourstory.com (sitemap fallback)
+2025-12-29 02:05:34,354 | INFO | crawler.url_seeder | Discovered 0 URLs from timesofindia.indiatimes.com (sitemap fallback)
+2025-12-29 02:05:34,511 | INFO | crawler.url_seeder | Discovered 0 URLs from economictimes.indiatimes.com (sitemap fallback)
+2025-12-29 02:05:35,275 | INFO | crawler.url_seeder | Discovered 0 URLs from www.business-standard.com (sitemap fallback)
+2025-12-29 02:05:35,462 | INFO | crawler.url_seeder | Found 30 page URLs in https://www.livemint.com/sitemap.xml (depth 0)
+2025-12-29 02:05:35,462 | INFO | crawler.url_seeder | Found 30 page URLs from www.livemint.com
+2025-12-29 02:05:35,462 | INFO | crawler.url_seeder | Discovered 10 URLs from www.livemint.com (sitemap fallback)
+2025-12-29 02:05:35,462 | INFO | crawler.url_seeder | Discovered 20 URLs across 19 domains
+2025-12-29 02:05:35,462 | INFO | crawler.url_seeder | Discovering URLs for query: India government news
+2025-12-29 02:05:35,462 | INFO | crawler.url_seeder | Discovering URLs from 19 domains (sitemap fallback)
+2025-12-29 02:05:35,671 | INFO | crawler.url_seeder | Found 30 page URLs in https://techcrunch.com/sitemap-page-2025.xml (depth 1)
+2025-12-29 02:05:35,671 | INFO | crawler.url_seeder | Found 30 page URLs from techcrunch.com
+2025-12-29 02:05:35,672 | INFO | crawler.url_seeder | Discovered 10 URLs from techcrunch.com (sitemap fallback)
+2025-12-29 02:05:35,933 | INFO | crawler.url_seeder | Discovered 0 URLs from www.firstpost.com (sitemap fallback)
+2025-12-29 02:05:36,500 | INFO | crawler.url_seeder | Discovered 0 URLs from thewire.in (sitemap fallback)
+2025-12-29 02:05:37,627 | INFO | crawler.url_seeder | Discovered 0 URLs from www.hindustantimes.com (sitemap fallback)
+2025-12-29 02:05:37,720 | INFO | crawler.url_seeder | Discovered 0 URLs from www.moneycontrol.com (sitemap fallback)
+2025-12-29 02:05:37,841 | INFO | crawler.url_seeder | Discovered 0 URLs from www.republicworld.com (sitemap fallback)
+2025-12-29 02:05:38,014 | INFO | crawler.url_seeder | Discovered 0 URLs from www.indiatoday.in (sitemap fallback)
+2025-12-29 02:05:38,030 | INFO | crawler.url_seeder | Discovered 0 URLs from inc42.com (sitemap fallback)
+2025-12-29 02:05:38,193 | INFO | crawler.url_seeder | Discovered 0 URLs from www.ndtv.com (sitemap fallback)
+2025-12-29 02:05:38,421 | INFO | crawler.url_seeder | Discovered 0 URLs from yourstory.com (sitemap fallback)
+2025-12-29 02:05:38,561 | INFO | crawler.url_seeder | Discovered 0 URLs from www.thehindu.com (sitemap fallback)
+2025-12-29 02:05:38,893 | INFO | crawler.url_seeder | Discovered 0 URLs from www.news18.com (sitemap fallback)
+2025-12-29 02:05:38,903 | INFO | crawler.url_seeder | Discovered 0 URLs from entrackr.com (sitemap fallback)
+2025-12-29 02:05:39,274 | INFO | crawler.url_seeder | Discovered 0 URLs from indianexpress.com (sitemap fallback)
+2025-12-29 02:05:39,494 | INFO | crawler.url_seeder | Discovered 0 URLs from scroll.in (sitemap fallback)
+2025-12-29 02:05:39,762 | INFO | crawler.url_seeder | Found 30 page URLs in https://www.livemint.com/sitemap.xml (depth 0)
+2025-12-29 02:05:39,762 | INFO | crawler.url_seeder | Found 30 page URLs from www.livemint.com
+2025-12-29 02:05:39,762 | INFO | crawler.url_seeder | Discovered 10 URLs from www.livemint.com (sitemap fallback)
+2025-12-29 02:05:40,185 | INFO | crawler.url_seeder | Discovered 0 URLs from timesofindia.indiatimes.com (sitemap fallback)
+2025-12-29 02:05:40,206 | INFO | crawler.url_seeder | Discovered 0 URLs from www.business-standard.com (sitemap fallback)
+2025-12-29 02:05:41,390 | INFO | crawler.url_seeder | Discovered 0 URLs from economictimes.indiatimes.com (sitemap fallback)
+2025-12-29 02:05:41,391 | INFO | crawler.url_seeder | Discovered 20 URLs across 19 domains
+2025-12-29 02:05:41,392 | INFO | crawler.url_seeder | Total unique India news URLs discovered: 114
+2025-12-29 02:05:41,432 | INFO | __main__ | Discovered 114 URLs, 94 new
+2025-12-29 02:05:41,432 | INFO | __main__ | Crawling 94 URLs
+2025-12-29 02:05:41,912 | INFO | crawler.core_engine | Crawling 94 URLs
+2025-12-29 02:05:45,143 | INFO | __main__ | ✓ Crawled: Google News... (score: 0.00)
+2025-12-29 02:08:22,756 | INFO | __main__ | ✓ Crawled: Industry News: Industry Updates, Indian Industries... (score: 0.00)
+2025-12-29 02:08:28,565 | INFO | __main__ | ✓ Crawled: Financial Calculator, Online Financial Calculator,... (score: 0.00)
+2025-12-29 02:08:33,289 | INFO | __main__ | ✓ Crawled: Personal Finance News: Wealth News, Tax News, Mone... (score: 0.00)
+2025-12-29 02:08:43,585 | INFO | __main__ | ✓ Crawled: Ask Mint Money: Ask Your Q&A related to Personal f... (score: 0.00)
+2025-12-29 02:08:45,846 | INFO | __main__ | Session 20251229_020409 completed: 5 successful, 0 failed, 89 duplicates, duration: 0:04:36.681546
+2025-12-29 02:08:48,352 | INFO | crawler.storage | Combined export: output/markdown/exported_20251229_020845.md (39 quality articles)
+2025-12-29 02:08:48,352 | INFO | __main__ | Exported 100 articles to: output/markdown
