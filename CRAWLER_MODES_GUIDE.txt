@@ -173,6 +173,30 @@ WORKFLOW:
   - Google News uses client-side JavaScript to redirect to actual articles
   - HTTP redirect resolution often fails
   - May store Google News page content instead of actual article
+solution
+1) Google News uses client-side JS redirects
+
+Use a headless browser (Playwright/Puppeteer) to let JS execute, then capture the final URL.
+
+Or extract the url parameter from Google News links (/articles/... often embeds the real URL, base64-encoded).
+
+2) HTTP redirect resolution often fails
+
+Enable multi-step redirect following (301/302 → meta refresh → JS).
+
+Increase timeout + retry with a different user agent.
+
+Log redirect chains so failures are diagnosable, not silent.
+
+3) May store Google News page instead of article
+
+Add a post-fetch validation check:
+
+Domain ≠ news.google.com
+
+Page contains article signals (author/date/body length).
+
+If validation fails, queue the URL for JS-based reprocessing instead of storing it.
 
 COMMAND:
     python main.py --mode google-news --max-urls 50
@@ -479,8 +503,7 @@ sqlite3 data/crawler.db "SELECT COUNT(*) FROM articles;"
 sqlite3 data/crawler.db "SELECT source_domain, COUNT(*) FROM articles GROUP BY source_domain;"
 
 # Export to CSV
-sqlite3 -header -csv data/crawler.db "SELECT url, title, source_domain, crawled_at FROM articles;" > articles.csv
-
+49
 # Export to JSON
 sqlite3 data/crawler.db "SELECT json_group_array(json_object('url', url, 'title', title, 'content', content, 'source', source_domain)) FROM articles;" > articles.json
 
