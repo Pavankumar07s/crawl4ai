@@ -10,3 +10,39 @@ python main.py --mode adaptive
 # Development mode (fewer URLs, visible browser)
 python main.py --mode seed --dev
 python main.py --mode google-news --max-urls 20
+
+
+Available Modes:
+Mode	Command	Description
+rss (Default)	python [main.py](http://_vscodecontentref_/5) --mode rss	Direct RSS feeds - Most reliable
+seed	python [main.py](http://_vscodecontentref_/6) --mode seed	Sitemap-based discovery
+google-news	python [main.py](http://_vscodecontentref_/7) --mode google-news	Google News (has redirect issues)
+deep	python [main.py](http://_vscodecontentref_/8) --mode deep	Deep crawl from seed URLs
+adaptive	python [main.py](http://_vscodecontentref_/9) --mode adaptive	Query-satisfaction based
+====================================================================================================
+# Daily news collection (RECOMMENDED)
+python main.py --mode rss --max-urls 200
+
+# Comprehensive one-time scrape
+python main.py --mode seed --max-urls 500
+
+# Research a specific topic
+python main.py --mode adaptive --max-urls 100
+
+# Explore a single news site deeply
+python main.py --mode deep --max-urls 300
+
+# Production monitoring (run in background)
+nohup python main.py --mode continuous &
+========================================================================
+# View all articles
+sqlite3 data/crawler.db "SELECT * FROM articles;"
+
+# Export to CSV
+sqlite3 -header -csv data/crawler.db "SELECT url, title, source_domain, crawled_at FROM articles;" > articles.csv
+
+# Export to JSON
+sqlite3 data/crawler.db "SELECT json_group_array(json_object('url', url, 'title', title, 'content', content, 'source', source_domain)) FROM articles;" > articles.json
+
+# View specific article content
+sqlite3 data/crawler.db "SELECT content FROM articles WHERE id=84;"

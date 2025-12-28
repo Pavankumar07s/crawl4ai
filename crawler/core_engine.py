@@ -300,17 +300,29 @@ class CoreCrawlerEngine:
         run_config = self._build_run_config(strategy, stream=stream)
         
         try:
-            if stream:
-                # Streaming mode - yield results as they come
-                async for result in await self._crawler.arun(start_url, config=run_config):
+            result_or_gen = await self._crawler.arun(start_url, config=run_config)
+            
+            # Handle different return types from crawl4ai
+            if hasattr(result_or_gen, '__aiter__'):
+                # It's an async iterator - stream results
+                async for result in result_or_gen:
                     await self._apply_politeness_delay()
                     yield self._process_result(result)
-            else:
-                # Batch mode - get all results then yield
-                results = await self._crawler.arun(start_url, config=run_config)
-                for result in results:
+            elif hasattr(result_or_gen, '__iter__'):
+                # It's a regular iterable (list, container, etc.)
+                for result in result_or_gen:
                     yield self._process_result(result)
+            elif hasattr(result_or_gen, 'results'):
+                # It's a CrawlResultContainer with a .results attribute
+                for result in result_or_gen.results:
+                    yield self._process_result(result)
+            elif result_or_gen is not None:
+                # It's a single result object
+                yield self._process_result(result_or_gen)
                     
+        except GeneratorExit:
+            # Graceful generator close - don't log as error
+            pass
         except Exception as e:
             logger.error(f"Crawl error: {e}")
             yield CrawlResult(

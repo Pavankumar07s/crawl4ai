@@ -56,6 +56,18 @@ class NewsSource:
 
 # Pre-configured news sources
 NEWS_SOURCES: Dict[str, NewsSource] = {
+    # Social/Forums
+    "reddit_india": NewsSource(
+        url="https://www.reddit.com/r/india/",
+        name="Reddit r/india",
+        domain="reddit.com",
+        category=SourceCategory.SOCIAL,
+        language=Language.ENGLISH,
+        reliability=SourceReliability.LOW,
+        priority=10,
+        requires_js=True,
+        has_sitemap=False,
+    ),
     # National English News
     "times_of_india": NewsSource(
         url="https://timesofindia.indiatimes.com/",
@@ -67,6 +79,7 @@ NEWS_SOURCES: Dict[str, NewsSource] = {
         priority=9,
         has_sitemap=True,
     ),
+    
     "hindustan_times": NewsSource(
         url="https://www.hindustantimes.com/",
         name="Hindustan Times",
@@ -237,18 +250,7 @@ NEWS_SOURCES: Dict[str, NewsSource] = {
         priority=6,
     ),
     
-    # Social/Forums
-    "reddit_india": NewsSource(
-        url="https://www.reddit.com/r/india/",
-        name="Reddit r/india",
-        domain="reddit.com",
-        category=SourceCategory.SOCIAL,
-        language=Language.ENGLISH,
-        reliability=SourceReliability.LOW,
-        priority=4,
-        requires_js=True,
-        has_sitemap=False,
-    ),
+    
 }
 
 class NewsSourceManager:

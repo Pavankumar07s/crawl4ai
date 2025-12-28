@@ -1,0 +1,495 @@
+================================================================================
+           INDIA NEWS CRAWLER - MODE EXPLANATION GUIDE
+================================================================================
+
+Created: December 27, 2025
+Purpose: Detailed explanation of all crawler modes, workflows, and tools
+
+================================================================================
+                         OVERVIEW ARCHITECTURE
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           CRAWLER ARCHITECTURE                                   │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│   ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                   │
+│   │   URL        │     │   CRAWL      │     │   STORAGE    │                   │
+│   │   DISCOVERY  │ ──► │   ENGINE     │ ──► │   MANAGER    │                   │
+│   └──────────────┘     └──────────────┘     └──────────────┘                   │
+│         │                    │                    │                             │
+│    URLSeeder             CoreCrawlerEngine    StorageManager                    │
+│    - RSS Parser          - AsyncWebCrawler    - SQLiteStorage                   │
+│    - Sitemap Parser      - BestFirst/BFS/DFS  - JSONLinesStorage               │
+│    - Google News         - Keyword Scorer     - MarkdownExporter               │
+│                          - Filter Chain       - ContentDeduplicator            │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+              MODE 1: rss (Default - RECOMMENDED)
+================================================================================
+
+WHAT IT DOES:
+Fetches news directly from 31 Indian news website RSS feeds and crawls the 
+article URLs.
+
+WORKFLOW:
+┌─────────────────────────────────────────────────────────────────────┐
+│                         RSS MODE WORKFLOW                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   1. FETCH RSS FEEDS (Parallel - 10 concurrent)                     │
+│      ├── Times of India RSS (3 feeds)                              │
+│      ├── Hindustan Times RSS (3 feeds)                             │
+│      ├── NDTV RSS (3 feeds)                                        │
+│      ├── Indian Express RSS (3 feeds)                              │
+│      ├── The Hindu, LiveMint, ET (5 feeds)                         │
+│      ├── TechCrunch India, YourStory, Inc42 (4 feeds)             │
+│      └── News18, India Today, FirstPost (6 feeds)                  │
+│                           ▼                                         │
+│   2. PARSE XML → Extract article URLs, titles, dates                │
+│                           ▼                                         │
+│   3. SCORE & SORT → Relevance keywords (india, mumbai, etc.)       │
+│                           ▼                                         │
+│   4. DEDUP CHECK → Skip already crawled URLs (SQLite lookup)        │
+│                           ▼                                         │
+│   5. CRAWL URLS → AsyncWebCrawler (Playwright browser)              │
+│                           ▼                                         │
+│   6. STORE → SQLite DB + Optional JSONL/Markdown                    │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+TOOLS USED:
+┌─────────────────┬────────────────────────────┬─────────────────────────┐
+│ Component       │ Library/Tool               │ Purpose                 │
+├─────────────────┼────────────────────────────┼─────────────────────────┤
+│ RSS Fetching    │ aiohttp                    │ Async HTTP requests     │
+│ XML Parsing     │ xml.etree.ElementTree      │ Parse RSS/Atom XML      │
+│ Browser         │ Crawl4AI AsyncWebCrawler   │ Headless Chromium       │
+│ Storage         │ SQLite3                    │ Structured database     │
+└─────────────────┴────────────────────────────┴─────────────────────────┘
+
+COMMAND:
+    python main.py --mode rss --max-urls 100
+
+BEST FOR:
+  ✅ Most reliable - Direct article URLs (no redirect issues)
+  ✅ Fresh news from 23+ active feeds
+  ✅ ~600 articles available per run
+
+================================================================================
+              MODE 2: seed (Sitemap-based)
+================================================================================
+
+WHAT IT DOES:
+Discovers URLs from website sitemaps (XML files that list all pages on a site).
+
+WORKFLOW:
+┌─────────────────────────────────────────────────────────────────────┐
+│                        SEED MODE WORKFLOW                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   1. GET SEED URLS from config:                                     │
+│      ├── national_news: timesofindia, ndtv, thehindu, etc.         │
+│      ├── tech_news: techcrunch, yourstory, inc42                   │
+│      └── regional_news: bhaskar, jagran, loksatta                  │
+│                           ▼                                         │
+│   2. FETCH SITEMAPS for each domain:                                │
+│      ├── /news-sitemap.xml (priority)                              │
+│      ├── /post-sitemap.xml                                         │
+│      ├── /sitemap.xml                                              │
+│      └── /sitemap_index.xml → Follow nested sitemaps               │
+│                           ▼                                         │
+│   3. PARSE SITEMAP XML → Extract URLs + lastmod dates               │
+│                           ▼                                         │
+│   4. FILTER URLs:                                                   │
+│      ├── Pattern match (*news*, *article*, *story*)                │
+│      ├── Date filter (last 7 days default)                         │
+│      └── Keyword score (india, politics, business, etc.)           │
+│                           ▼                                         │
+│   5. OPTIONAL: Include Google News RSS feeds                        │
+│                           ▼                                         │
+│   6. CRAWL → Store (same as RSS mode)                               │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+TOOLS USED:
+┌─────────────────┬────────────────────────────┬─────────────────────────┐
+│ Component       │ Library/Tool               │ Purpose                 │
+├─────────────────┼────────────────────────────┼─────────────────────────┤
+│ Sitemap Fetch   │ aiohttp                    │ Async HTTP GET          │
+│ XML Parsing     │ xml.etree.ElementTree      │ Parse sitemap XML       │
+│ URL Filtering   │ URLPatternFilter           │ Filter relevant URLs    │
+│ Browser         │ Crawl4AI AsyncWebCrawler   │ Page rendering          │
+│ Storage         │ SQLiteStorage              │ Database                │
+└─────────────────┴────────────────────────────┴─────────────────────────┘
+
+COMMANDS:
+    python main.py --mode seed --max-urls 100
+    python main.py --mode seed --no-google-news  # Without Google News
+
+BEST FOR:
+  ✅ Comprehensive coverage of entire news sites
+  ✅ Finds older articles (sitemaps contain historical URLs)
+  ⚠️ Slower than RSS (needs to parse large sitemaps)
+
+================================================================================
+              MODE 3: google-news
+================================================================================
+
+WHAT IT DOES:
+Fetches news from Google News RSS search feeds for India-related queries.
+
+WORKFLOW:
+┌─────────────────────────────────────────────────────────────────────┐
+│                    GOOGLE NEWS MODE WORKFLOW                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   1. CONSTRUCT RSS URLs:                                            │
+│      https://news.google.com/rss/search?q=india+news&hl=en-IN...   │
+│      https://news.google.com/rss/search?q=india+politics...        │
+│      https://news.google.com/rss/search?q=india+economy...         │
+│                           ▼                                         │
+│   2. FETCH RSS XML → Parse <item> elements                          │
+│                           ▼                                         │
+│   3. EXTRACT:                                                       │
+│      ├── Article title                                             │
+│      ├── Google News encoded URL (news.google.com/articles/...)    │
+│      ├── Publication date                                          │
+│      └── Source name                                               │
+│                           ▼                                         │
+│   4. TRY RESOLVE REDIRECTS (limited success):                       │
+│      ├── Follow HTTP redirects                                     │
+│      └── ⚠️ JavaScript redirects NOT resolved                      │
+│                           ▼                                         │
+│   5. CRAWL URLS → May crawl Google page instead of article          │
+│                           ▼                                         │
+│   6. STORE → SQLite                                                 │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+⚠️ KNOWN ISSUES:
+  - Google News uses client-side JavaScript to redirect to actual articles
+  - HTTP redirect resolution often fails
+  - May store Google News page content instead of actual article
+
+COMMAND:
+    python main.py --mode google-news --max-urls 50
+
+BEST FOR:
+  ⚠️ Use with caution - Redirect issues
+  ✅ Good for discovering trending news topics
+  ✅ Aggregates from many sources automatically
+
+================================================================================
+              MODE 4: deep (Link Following)
+================================================================================
+
+WHAT IT DOES:
+Starts from seed URLs and follows internal links to discover more pages, 
+like a spider.
+
+WORKFLOW:
+┌─────────────────────────────────────────────────────────────────────┐
+│                        DEEP MODE WORKFLOW                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   1. START FROM SEED URLs:                                          │
+│      └── e.g., https://timesofindia.indiatimes.com/                │
+│                           ▼                                         │
+│   2. LOAD PAGE → Extract all <a href="..."> links                   │
+│                           ▼                                         │
+│   3. FILTER LINKS using FilterChain:                                │
+│      ├── URLPatternFilter: Keep *news*, *article* patterns         │
+│      ├── DomainFilter: Block login, signup, cart pages             │
+│      ├── ContentTypeFilter: Only text/html                         │
+│      └── ContentRelevanceFilter: Score by query relevance          │
+│                           ▼                                         │
+│   4. SCORE LINKS using KeywordRelevanceScorer:                      │
+│      └── Keywords: india, news, politics, business, cricket, etc.  │
+│                           ▼                                         │
+│   5. SELECT STRATEGY:                                               │
+│      ├── BFS (Breadth-First): All links at depth N before N+1      │
+│      ├── DFS (Depth-First): Follow one path deeply first           │
+│      └── BestFirst (default): Prioritize highest-scored links      │
+│                           ▼                                         │
+│   6. RECURSIVE CRAWL:                                               │
+│      ├── depth=0: Seed page                                        │
+│      ├── depth=1: Links from seed                                  │
+│      ├── depth=2: Links from depth 1                               │
+│      └── ... until max_depth (default: 3)                          │
+│                           ▼                                         │
+│   7. STORE each page → SQLite with depth metadata                   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+CRAWL STRATEGIES EXPLAINED:
+┌─────────────────┬────────────────────────────────────────┬─────────────────────────────┐
+│ Strategy        │ How it Works                           │ Best For                    │
+├─────────────────┼────────────────────────────────────────┼─────────────────────────────┤
+│ BestFirst       │ Always crawl highest-scored URL next   │ News (finds relevant fast)  │
+│ BFS             │ Level by level (all depth=1, then =2)  │ Comprehensive coverage      │
+│ DFS             │ Follow one path to max, then backtrack │ Finding deeply nested pages │
+└─────────────────┴────────────────────────────────────────┴─────────────────────────────┘
+
+TOOLS USED:
+┌─────────────────┬────────────────────────────┬─────────────────────────┐
+│ Component       │ Library/Tool               │ Purpose                 │
+├─────────────────┼────────────────────────────┼─────────────────────────┤
+│ Link Extraction │ Crawl4AI DeepCrawlStrategy │ Parse page links        │
+│ Scoring         │ KeywordRelevanceScorer     │ Rank links by relevance │
+│ Filtering       │ FilterChain                │ Remove unwanted URLs    │
+│ Strategy        │ BestFirstCrawlingStrategy  │ Prioritize best links   │
+│ Browser         │ AsyncWebCrawler (Playwright)│ Render JavaScript pages│
+└─────────────────┴────────────────────────────┴─────────────────────────┘
+
+COMMAND:
+    python main.py --mode deep --max-urls 500
+
+BEST FOR:
+  ✅ Discovering related articles from a news site
+  ✅ Building comprehensive coverage of a topic
+  ⚠️ Can be slow (renders each page)
+  ⚠️ May crawl non-article pages
+
+================================================================================
+              MODE 5: adaptive (Smart Stopping)
+================================================================================
+
+WHAT IT DOES:
+Uses information foraging theory to automatically stop when enough information 
+is gathered for a query.
+
+WORKFLOW:
+┌─────────────────────────────────────────────────────────────────────┐
+│                     ADAPTIVE MODE WORKFLOW                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   1. DEFINE QUERIES to satisfy:                                     │
+│      ├── "India news"                                              │
+│      ├── "India politics"                                          │
+│      ├── "India economy"                                           │
+│      └── etc.                                                      │
+│                           ▼                                         │
+│   2. FOR EACH QUERY:                                                │
+│      │                                                             │
+│      ├── 3. CRAWL PAGE → Extract content                           │
+│      │                                                             │
+│      ├── 4. CALCULATE METRICS:                                      │
+│      │   ├── coverage_score: How much query info found             │
+│      │   ├── consistency_score: Info consistency across pages      │
+│      │   ├── saturation_score: Diminishing returns detected        │
+│      │   └── confidence_score: Combined metric                     │
+│      │                                                             │
+│      ├── 5. CHECK STOPPING CONDITION:                               │
+│      │   └── confidence >= threshold (default: 0.8)?               │
+│      │                                                             │
+│      ├── 6. IF NOT SATISFIED:                                       │
+│      │   ├── Calculate information_gain from last page             │
+│      │   ├── If gain > min_threshold → continue                    │
+│      │   └── If gain < min_threshold → stop (diminishing returns)  │
+│      │                                                             │
+│      └── 7. REPEAT until satisfied or max_pages                     │
+│                           ▼                                         │
+│   8. STORE all crawled pages → SQLite                               │
+│                           ▼                                         │
+│   9. RETURN METRICS: pages_crawled, avg_confidence, etc.            │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+KEY METRICS:
+┌─────────────────────┬───────────────────────────────────────────┬───────────┐
+│ Metric              │ What it Measures                          │ Range     │
+├─────────────────────┼───────────────────────────────────────────┼───────────┤
+│ coverage_score      │ % of query terms found in crawled content │ 0.0 - 1.0 │
+│ consistency_score   │ How consistent information is across pages│ 0.0 - 1.0 │
+│ saturation_score    │ Detecting diminishing returns             │ 0.0 - 1.0 │
+│ confidence_score    │ Combined score (weighted average)         │ 0.0 - 1.0 │
+│ information_gain    │ New info from latest page                 │ 0.0 - 1.0 │
+└─────────────────────┴───────────────────────────────────────────┴───────────┘
+
+TOOLS USED:
+┌─────────────────┬────────────────────────────┬─────────────────────────────────┐
+│ Component       │ Library/Tool               │ Purpose                         │
+├─────────────────┼────────────────────────────┼─────────────────────────────────┤
+│ Core Engine     │ Crawl4AI AdaptiveCrawler   │ Smart crawling                  │
+│ Config          │ AdaptiveConfig             │ Thresholds & limits             │
+│ State           │ JSON file (crawl_state.json)│ Resume interrupted crawls      │
+│ Analysis        │ Information foraging algos │ Calculate metrics               │
+└─────────────────┴────────────────────────────┴─────────────────────────────────┘
+
+COMMANDS:
+    python main.py --mode adaptive --max-urls 100
+    python main.py --mode adaptive --dev  # Development mode
+
+BEST FOR:
+  ✅ Research tasks - "Find everything about topic X"
+  ✅ Efficient use of resources (stops when enough info)
+  ✅ Great for specific queries
+  ⚠️ Slower per-page (needs metric calculation)
+
+================================================================================
+              MODE 6: continuous (Background Running)
+================================================================================
+
+WHAT IT DOES:
+Runs in a loop, periodically discovering and crawling new URLs.
+
+WORKFLOW:
+┌─────────────────────────────────────────────────────────────────────┐
+│                    CONTINUOUS MODE WORKFLOW                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   ┌─────────────────────────────────────────────────────────────┐   │
+│   │                    INFINITE LOOP                            │   │
+│   │                                                             │   │
+│   │   1. DISCOVER NEW URLs (RSS + Sitemaps)                     │   │
+│   │                      ▼                                      │   │
+│   │   2. FILTER already crawled                                 │   │
+│   │                      ▼                                      │   │
+│   │   3. CRAWL new URLs                                         │   │
+│   │                      ▼                                      │   │
+│   │   4. STORE results                                          │   │
+│   │                      ▼                                      │   │
+│   │   5. SLEEP (interval_minutes, default: 30)                  │   │
+│   │                      ▼                                      │   │
+│   │   6. REPEAT ─────────────────────────────────────────►      │   │
+│   │                                                             │   │
+│   └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│   CTRL+C to stop gracefully                                         │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+COMMAND:
+    python main.py --mode continuous  # Runs every 30 minutes
+
+BEST FOR:
+  ✅ Production deployment - Keep database updated
+  ✅ Background news monitoring
+  ✅ Long-running data collection
+
+================================================================================
+                    STORAGE SYSTEM (All Modes)
+================================================================================
+
+All modes use the same StorageManager:
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        STORAGE PIPELINE                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   CrawlResult                                                       │
+│       │                                                             │
+│       ▼                                                             │
+│   ┌─────────────────────┐                                          │
+│   │  ContentDeduplicator │ ← SHA256 hash of content                │
+│   │  (optional)          │   Skip if duplicate                     │
+│   └─────────────────────┘                                          │
+│       │                                                             │
+│       ▼                                                             │
+│   ┌─────────────────────┐     ┌─────────────────────┐              │
+│   │   SQLiteStorage     │     │   JSONLinesStorage  │              │
+│   │   (Primary)         │     │   (Streaming)       │              │
+│   │                     │     │                     │              │
+│   │   data/crawler.db   │     │   output/*.jsonl    │              │
+│   │                     │     │                     │              │
+│   │   Tables:           │     │   Append-only       │              │
+│   │   - articles        │     │   One JSON/line     │              │
+│   │   - crawl_sessions  │     │                     │              │
+│   │   - url_frontier    │     │                     │              │
+│   └─────────────────────┘     └─────────────────────┘              │
+│       │                                                             │
+│       ▼                                                             │
+│   ┌─────────────────────┐                                          │
+│   │  MarkdownExporter   │ ← Optional                               │
+│   │  (Per-article .md)  │                                          │
+│   │                     │                                          │
+│   │   output/markdown/  │                                          │
+│   └─────────────────────┘                                          │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+DATABASE SCHEMA:
+----------------
+    articles (
+        id INTEGER PRIMARY KEY,
+        url TEXT UNIQUE,
+        url_hash TEXT,          -- For fast duplicate check
+        title TEXT,
+        content TEXT,           -- Full text content
+        markdown TEXT,          -- Markdown version
+        source_domain TEXT,     -- e.g., "indianexpress.com"
+        language TEXT,
+        score REAL,             -- Relevance score
+        depth INTEGER,          -- Crawl depth (deep mode)
+        crawled_at TIMESTAMP,
+        metadata JSON
+    )
+
+================================================================================
+                    MODE COMPARISON TABLE
+================================================================================
+
+┌───────────────┬─────────────┬─────────────┬─────────────────┬─────────────────────────┐
+│ Mode          │ Speed       │ Reliability │ Coverage        │ Use Case                │
+├───────────────┼─────────────┼─────────────┼─────────────────┼─────────────────────────┤
+│ rss           │ ⚡ Fast     │ ✅ High     │ ~600 articles   │ Daily news collection   │
+│ seed          │ 🐢 Medium   │ ✅ High     │ Thousands       │ Comprehensive scraping  │
+│ google-news   │ ⚡ Fast     │ ⚠️ Low      │ ~70 articles    │ Trending topics (limit) │
+│ deep          │ 🐢 Slow     │ ✅ High     │ Variable        │ Site exploration        │
+│ adaptive      │ 🐢 Slow     │ ✅ High     │ Query-dependent │ Research tasks          │
+│ continuous    │ ♾️ Ongoing  │ ✅ High     │ Unlimited       │ Production monitoring   │
+└───────────────┴─────────────┴─────────────┴─────────────────┴─────────────────────────┘
+
+================================================================================
+                    RECOMMENDED USAGE
+================================================================================
+
+# Daily news collection (RECOMMENDED)
+python main.py --mode rss --max-urls 200
+
+# Comprehensive one-time scrape
+python main.py --mode seed --max-urls 500
+
+# Research a specific topic
+python main.py --mode adaptive --max-urls 100
+
+# Explore a single news site deeply
+python main.py --mode deep --max-urls 300
+
+# Production monitoring (run in background)
+nohup python main.py --mode continuous &
+
+# Development mode (visible browser, fewer URLs)
+python main.py --mode rss --dev --max-urls 20
+
+================================================================================
+                    DATA ACCESS COMMANDS
+================================================================================
+
+# View all articles
+sqlite3 data/crawler.db "SELECT * FROM articles;"
+
+# Count total articles
+sqlite3 data/crawler.db "SELECT COUNT(*) FROM articles;"
+
+# View articles by source
+sqlite3 data/crawler.db "SELECT source_domain, COUNT(*) FROM articles GROUP BY source_domain;"
+
+# Export to CSV
+sqlite3 -header -csv data/crawler.db "SELECT url, title, source_domain, crawled_at FROM articles;" > articles.csv
+
+# Export to JSON
+sqlite3 data/crawler.db "SELECT json_group_array(json_object('url', url, 'title', title, 'content', content, 'source', source_domain)) FROM articles;" > articles.json
+
+# View specific article content
+sqlite3 data/crawler.db "SELECT content FROM articles WHERE id=1;"
+
+# View recent articles
+sqlite3 -header -column data/crawler.db "SELECT id, substr(title, 1, 50), source_domain FROM articles ORDER BY id DESC LIMIT 10;"
+
+================================================================================
+                              END OF GUIDE
+================================================================================

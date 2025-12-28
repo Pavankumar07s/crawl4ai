@@ -135,10 +135,7 @@ INDIA_NEWS_QUERIES = [
 # These provide direct article URLs without redirect issues
 NEWS_RSS_FEEDS = [
     # --- National News (English) ---
-    # Times of India
-    "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
-    "https://timesofindia.indiatimes.com/rssfeeds/1221656.cms",  # India news
-    "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms",  # Politics
+   
     # Hindustan Times
     "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml",
     "https://www.hindustantimes.com/feeds/rss/business/rssfeed.xml",
@@ -154,6 +151,10 @@ NEWS_RSS_FEEDS = [
     # The Hindu
     "https://www.thehindu.com/news/national/feeder/default.rss",
     "https://www.thehindu.com/business/feeder/default.rss",
+     # Times of India
+    "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+    "https://timesofindia.indiatimes.com/rssfeeds/1221656.cms",  # India news
+    "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms",  # Politics
     # LiveMint
     "https://www.livemint.com/rss/news",
     "https://www.livemint.com/rss/economy",
@@ -208,7 +209,7 @@ SEED_URLS = {
         "https://www.google.com/search?q=india+news&tbm=nws",
     ],
     "national_news": [
-        "https://timesofindia.indiatimes.com/",
+        
         "https://www.hindustantimes.com/",
         "https://indianexpress.com/",
         "https://www.ndtv.com/",
@@ -223,6 +224,7 @@ SEED_URLS = {
         "https://www.indiatoday.in/",
         "https://scroll.in/",
         "https://thewire.in/",
+        "https://timesofindia.indiatimes.com/",
     ],
     "regional_hindi": [
         "https://www.bhaskar.com/",

@@ -22,6 +22,22 @@ from config import (
     INDIA_NEWS_QUERIES,
     INDIA_STATE_QUERIES,
 )
+
+# Suppress the ContextVar cross-context reset error from crawl4ai
+# This is a known issue when async generators are closed across different contexts
+import warnings
+import logging
+
+# Filter out the specific asyncio "Task exception was never retrieved" for ContextVar
+class _ContextVarFilter(logging.Filter):
+    def filter(self, record):
+        if "ContextVar" in str(record.msg) and "different Context" in str(record.msg):
+            return False
+        return True
+
+logging.getLogger("asyncio").addFilter(_ContextVarFilter())
+
+# Import crawler components lazily (module-level import kept for typing/runtime use)
 from crawler import (
     CoreCrawlerEngine,
     URLSeeder,
@@ -338,6 +354,11 @@ class IndiaNewsCrawler:
             for start_url in start_urls:
                 if self._shutdown_requested:
                     break
+                
+                # Check if we've already hit the global limit
+                if len(results) >= max_pages:
+                    logger.info(f"Max pages reached ({len(results)}/{max_pages}), skipping remaining seeds")
+                    break
                     
                 logger.info(f"Deep crawling: {start_url}")
                 
@@ -365,7 +386,7 @@ class IndiaNewsCrawler:
                     self._current_session.total_urls += 1
                     
                     if len(results) >= max_pages:
-                        logger.info("Max pages reached")
+                        logger.info(f"Max pages reached ({len(results)}/{max_pages})")
                         break
                         
         return results
@@ -610,20 +631,77 @@ class IndiaNewsCrawler:
             },
         }
         
-    def export_results(self, format: str = "rag"):
+    def export_results(self, format: str = "rag", limit: int = 100):
         """
         Export results in specified format
         
         Args:
-            format: Output format (rag, jsonl, markdown)
+            format: Output format (rag, json, jsonl, markdown)
+            limit: Number of recent articles to export
         """
         if format == "rag":
-            self.storage.export_for_rag("./output/rag_export.json")
+            self.storage.export_for_rag("./output/rag_export.json", min_score=0.0)
+            logger.info("RAG export complete at: ./output/rag_export.json")
+        elif format == "json":
+            articles = self.storage.get_recent_articles(limit=limit, min_score=0.0)
+            if articles:
+                # Export to JSON file (array format)
+                import json
+                from datetime import datetime
+                json_file = Path("./output") / f"exported_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                json_file.parent.mkdir(parents=True, exist_ok=True)
+                
+                with open(json_file, 'w', encoding='utf-8') as f:
+                    json.dump(articles, f, indent=2, ensure_ascii=False)
+                
+                logger.info(f"Exported {len(articles)} articles to: {json_file}")
+            else:
+                logger.warning("No articles to export")
         elif format == "jsonl":
-            logger.info(f"JSONL output at: {self.storage.jsonl_path}")
+            articles = self.storage.get_recent_articles(limit=limit, min_score=0.0)
+            if articles:
+                # Export to JSONL file
+                import json
+                from datetime import datetime
+                jsonl_file = Path("./output") / f"exported_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
+                jsonl_file.parent.mkdir(parents=True, exist_ok=True)
+                
+                with open(jsonl_file, 'w', encoding='utf-8') as f:
+                    for article in articles:
+                        f.write(json.dumps(article, ensure_ascii=False) + '\n')
+                
+                logger.info(f"Exported {len(articles)} articles to: {jsonl_file}")
+            else:
+                logger.warning("No articles to export")
         elif format == "markdown":
-            articles = self.storage.get_recent_articles(limit=100)
-            logger.info(f"Markdown export at: {self.storage.markdown_exporter.output_dir}")
+            articles = self.storage.get_recent_articles(limit=limit, min_score=0.0)
+            if articles:
+                # Convert dict articles to CrawlResult objects for export
+                from datetime import datetime
+                crawl_results = []
+                for article in articles:
+                    result = CrawlResult(
+                        url=article.get("url", ""),
+                        title=article.get("title", ""),
+                        content=article.get("content", ""),
+                        markdown=article.get("markdown", ""),
+                        metadata=article.get("metadata", {}),
+                        depth=0,
+                        score=article.get("score", 0.0),
+                        crawled_at=datetime.now(),
+                        success=True,
+                        source_domain=article.get("source_domain", ""),
+                    )
+                    crawl_results.append(result)
+                
+                # Export combined markdown file
+                self.storage.markdown_exporter.export_combined(
+                    crawl_results,
+                    f"exported_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                )
+                logger.info(f"Exported {len(articles)} articles to: {self.storage.markdown_exporter.output_dir}")
+            else:
+                logger.warning("No articles to export")
 
 
 # CLI entry point
@@ -656,7 +734,7 @@ async def main():
     )
     parser.add_argument(
         "--export",
-        choices=["rag", "jsonl", "markdown"],
+        choices=["rag", "json", "jsonl", "markdown"],
         help="Export format after crawling"
     )
     

@@ -288,7 +288,33 @@ metrics.print_summary()
 │                     Crawl4AI Engine                      │
 └─────────────────────────────────────────────────────────┘
 ```
-
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CRAWLING PIPELINE                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. URL DISCOVERY (RSS Mode - Default)                      │
+│     ├── 31 Direct RSS feeds from Indian news sites          │
+│     ├── Times of India, Hindustan Times, NDTV, etc.         │
+│     ├── TechCrunch India, YourStory, Inc42, Entrackr        │
+│     └── Returns 600+ articles with direct URLs              │
+│                                                             │
+│  2. DEDUPLICATION                                           │
+│     ├── Check SQLite for existing URLs                      │
+│     └── Skip already crawled articles                       │
+│                                                             │
+│  3. ADAPTIVE CRAWLING                                       │
+│     ├── BestFirstCrawlingStrategy (news-optimized)          │
+│     ├── KeywordRelevanceScorer for India news               │
+│     └── Content filtering and validation                    │
+│                                                             │
+│  4. STORAGE                                                 │
+│     ├── SQLite: Full article storage (title, content, etc.) │
+│     ├── JSONL: Streaming output for large crawls            │
+│     └── Markdown: Optional export                           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
 ## 📝 License
 
 MIT License
