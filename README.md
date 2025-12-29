@@ -1,8 +1,8 @@
-# 🇮🇳 India News & Social Feed Web Crawler
+# India News & Social Feed Web Crawler
 
 A **production-ready** web crawler and content extractor focused on India news, built with [Crawl4AI](https://docs.crawl4ai.com/).
 
-## 🎯 Features
+## Features
 
 - **URL Seeding** - Intelligent URL discovery from sitemaps and Common Crawl
 - **Adaptive Crawling** - Stops automatically when enough information is gathered  
@@ -13,7 +13,7 @@ A **production-ready** web crawler and content extractor focused on India news, 
 - **Rate Limiting** - Respectful crawling with configurable delays
 - **Proxy Support** - Rotation strategies for large-scale crawling
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 crawl4ai/
@@ -35,7 +35,7 @@ crawl4ai/
 └── requirements.txt
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -72,8 +72,8 @@ asyncio.run(main())
 ### CLI Usage
 
 ```bash
-# Seed and crawl (default)
-python main.py --mode seed --max-urls 100
+# Seed and crawl (default) with output
+python main.py --mode seed --max-urls 100 --export markdown/json
 
 # Deep crawl from seed URLs
 python main.py --mode deep --max-urls 500
@@ -91,7 +91,7 @@ python main.py --mode seed --dev
 python main.py --mode seed --export rag
 ```
 
-## 📖 Crawling Modes
+## Crawling Modes
 
 ### 1. Seed and Crawl
 Discovers URLs first, then crawls them:
@@ -129,7 +129,7 @@ await crawler.run_continuous(
 )
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Crawler Config
 ```python
@@ -168,7 +168,7 @@ config = URLSeedingConfig(
 )
 ```
 
-## 📰 Supported News Sources
+##  Supported News Sources
 
 ### National (English)
 - Times of India
@@ -193,7 +193,7 @@ config = URLSeedingConfig(
 ### Social
 - Reddit r/india
 
-## 💾 Output Formats
+## Output Formats
 
 ### JSONL (Streaming)
 ```json
@@ -259,7 +259,7 @@ proxy_config = ProxyConfig(
 crawler.storage.export_for_rag("./output/rag_data.json")
 ```
 
-## 📊 Monitoring
+## Monitoring
 
 ```python
 from utils import MetricsCollector, setup_logging
@@ -275,7 +275,7 @@ metrics.end_session()
 metrics.print_summary()
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -315,10 +315,10 @@ metrics.print_summary()
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
-## 📝 License
+## License
 
 MIT License
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built with [Crawl4AI](https://github.com/unclecode/crawl4ai) - the #1 open-source LLM-friendly web crawler.
